@@ -23,7 +23,32 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+
+require "slack_client"
+
+class TestBot < SlackClient::Client
+
+  # Called when the connexion is etablished with our amazing websockets
+  def onOpen data
+    print "Connexion opened !"
+  end
+
+  # Called when someone interact (new connexion, new message etc...)
+  # All this types are in message["type"]
+  # cf. https://api.slack.com/events
+  def onMessage message
+    print "We received a message ! #{message["text"]}"
+    
+    # We'll send a message back !
+    channel = getChannelByName "some_chan"
+    channel.send_text "Hello !"
+    end
+  end
+
+end
+
+```
 
 ## Contributing
 
