@@ -41,7 +41,7 @@ module SlackClient
       @_conn = 0
 
       @logger = Logger.new(STDOUT)
-      @logger.level = Logger::INFO
+      @logger.level = Logger::WARN
     end
 
     def login
@@ -77,7 +77,6 @@ module SlackClient
           data["groups"].each{|group| @groups[group["id"]] = Group.new(self, group)}
 
           self.onLogin @self, @team
-          puts "ready to connect !"
           connect()
         end
       else
@@ -96,6 +95,7 @@ module SlackClient
     end
 
     def onError error
+      @logger.warn "An error occured ! #{error}"
     end
 
     def onClose error
@@ -120,8 +120,6 @@ module SlackClient
         end
 
         @ws.on :message do |event|
-          # flags.binary will be set if a binary data is received
-          # flags.masked will be set if the data was masked
           self.onMessage event.data
           onMessage JSON.parse(event.data)
         end
@@ -193,10 +191,8 @@ module SlackClient
 
     def getChannelGroupOrDMByName (name)
       channel = getChannelByName(name)
-      p "Requested channel (#{name}) => #{channel}"
       unless channel
         group = getGroupByName(name)
-        p "Requested group (#{name}) => #{group}"
         return getDMByName(name) unless group
         return group
       else
@@ -211,7 +207,6 @@ module SlackClient
         message.id = (@messageID += 1)
         @_pending[message.id] = message
         json = JSON.generate(message.to_hash)
-        p "Ready to send #{json}"
         @ws.send json
       end
     end
