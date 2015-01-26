@@ -17,9 +17,7 @@ module SlackClient
     end
 
     def open
-      params = {
-        "channel" => @id
-      }
+      params = { "channel" => @id }
 
       @client.apiCall 'groups.open', params, "_onOpen"
     end
@@ -29,9 +27,7 @@ module SlackClient
     end
 
     def archive
-      params = {
-        "channel" => @id
-      }
+      params = { "channel" => @id }
 
       @client.apiCall 'groups.archive', params, "_onArchive"
     end
@@ -41,9 +37,7 @@ module SlackClient
     end
 
     def unarchive
-      params = {
-        "channel" => @id
-      }
+      params = { "channel" => @id }
 
       @client.apiCall 'groups.unarchive', params, "_onUnArchive"
     end
@@ -53,9 +47,7 @@ module SlackClient
     end
 
     def createChild
-      params = {
-        "channel" => @id
-      }
+      params = { "channel" => @id }
 
       @client.apiCall 'groups.createChild', params, "_onCreateChild"
     end

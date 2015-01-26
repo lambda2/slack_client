@@ -81,12 +81,12 @@ module SlackClient
     end
 
 
-    def send_message (text)
+    def send_text (text)
       m = Message.new @client, {text: text}
-      sendMessage m
+      send_message m
     end
 
-    def sendMessage (message)
+    def send_message (message)
       message.channel = @id
       @client._send(message)
     end

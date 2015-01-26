@@ -42,7 +42,6 @@ module SlackClient
       return '' if @hidden || (!@text and !@attachments)
 
       str = ""
-      # TODO: Date
 
       channel = @client.getChannelGroupOrDMByID @channel
       str += channel.name + ' > ' if channel
@@ -59,7 +58,6 @@ module SlackClient
         end
       end
 
-      # TODO: bots here
 
       str += getBody()
 

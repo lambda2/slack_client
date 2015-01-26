@@ -2,7 +2,6 @@ require 'logger'
 require "json"
 require "net/https"
 require "uri"
-require "event_emitter"
 require 'faye/websocket'
 require 'eventmachine'
 
@@ -16,8 +15,6 @@ require "slack_client/dm"
 module SlackClient
 
   class Client
-
-    include EventEmitter
 
     def initialize token, auto_reco = true, auto_mark = true
       @token = token
@@ -38,6 +35,7 @@ module SlackClient
       @socket = nil
       @ws = nil
       @message = 0
+      @messageID = 0
       @_pending = {}
 
       @_conn = 0
@@ -54,13 +52,12 @@ module SlackClient
     def on_login (data)
       if data
         unless data["ok"]
-          # emit 'error', data["error"]
+          self.onError data["error"]
           @authenticated = false
         else
           @authenticated = true
 
           # Important information about ourselves
-          # puts data[:self]
           @self = User.new(self, data["self"])
           @team = Team.new(self, data["team"]["id"], data["team"]["name"], data["team"]["domain"])
 
@@ -79,14 +76,12 @@ module SlackClient
           # Stash our list of private groups
           data["groups"].each{|group| @groups[group["id"]] = Group.new(self, group)}
 
-          # TODO: Process bots
-
-          self.emit 'loggedIn', @self, @team
+          self.onLogin @self, @team
           puts "ready to connect !"
           connect()
         end
       else
-        emit 'error', data
+        self.onError data
         @authenticated = false
         reconnect() if @autoReconnect
       end
@@ -94,13 +89,19 @@ module SlackClient
 
     # ======================= CALLBACKS =======================
 
-    def onOpen
+    def onOpen data
     end
 
     def onMessage message
     end
 
     def onError error
+    end
+
+    def onClose error
+    end
+
+    def onLogin user, team
     end
 
     # ======================= CONNEXIONS =======================
@@ -113,8 +114,7 @@ module SlackClient
         @ws = Faye::WebSocket::Client.new @socketUrl
 
         @ws.on :open do |event|
-          puts "open !"
-          self.emit 'open'
+          self.onOpen event
           @connected = true
           @_connAttempts = 0
         end
@@ -122,17 +122,16 @@ module SlackClient
         @ws.on :message do |event|
           # flags.binary will be set if a binary data is received
           # flags.masked will be set if the data was masked
-          puts "> #{event.data}"
+          self.onMessage event.data
           onMessage JSON.parse(event.data)
         end
 
         @ws.on :error do |event|
-          # TODO: Reconnect?
-          self.emit 'error'
+          self.onError event.data
         end
 
         @ws.on :close do |event|
-          self.emit 'close'
+          self.onClose event
           @connected = false
           @socketUrl = nil
         end
@@ -205,38 +204,6 @@ module SlackClient
       end
     end
 
-
-    # def getUnreadCount
-    #   count = 0
-    #   for id, channel of @channels
-    #     if channel.unread_count? then count += channel.unread_count
-
-    #   for id, dm of @ims
-    #     if dm.unread_count? then count += dm.unread_count
-
-    #   for id, group of @groups
-    #     if group.unread_count? then count += group.unread_count
-
-    #   count
-
-
-    # end
-
-
-    # def getChannelsWithUnreads
-    #   unreads = []
-    #   for id, channel of @channels
-    #     if channel.unread_count? then unreads.push channel
-
-    #   for id, dm of @ims
-    #     if dm.unread_count? then unreads.push dm
-
-    #   for id, group of @groups
-    #     if group.unread_count? then unreads.push group
-
-    #   unreads
-    # end
-
     def _send (message)
       unless @connected
         return false
@@ -258,7 +225,5 @@ module SlackClient
     end
 
   end
-
-EventEmitter.apply Client
 
 end
