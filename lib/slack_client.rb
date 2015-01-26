@@ -1,5 +1,6 @@
 require "slack_client/version"
+require "slack_client/client"
 
 module SlackClient
-  # Your code goes here...
+
 end
